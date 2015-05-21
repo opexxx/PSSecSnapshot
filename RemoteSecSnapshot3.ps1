@@ -1,5 +1,5 @@
 ﻿#**********************************************************************
-#  Remote Forensic Snapshot
+#  Remote Sec Snapshot
 #
 #  Gathers a large amount of detail on a target server and dumps the output to a chosen directory.
 #
