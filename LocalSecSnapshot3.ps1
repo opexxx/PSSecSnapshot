@@ -1,7 +1,7 @@
-﻿#**********************************************************************
-#  Remote Forensic Snapshot
+#**********************************************************************
+#  Local Sec Snapshot
 #
-#  Gathers a large amount of detail on 
+#  Gathers a large amount of detail on a given Windows host, pumps it out to xml or txt files.
 #
 #  Usage: Modify $ouputroot to reflect desired output path, $scriptdir to where the required tools can be found.
 #  RemoteSecSnapshot -Computername [hostname]
