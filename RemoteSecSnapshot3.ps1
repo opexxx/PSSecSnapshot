@@ -19,7 +19,9 @@
 
 Param ([String] $ComputerName, [Switch] $TextFileOutput, [Switch] $Full, [Switch] $Hashes)
 
-$credential = get-credential
+Import-Module ActiveDirectory
+
+$credential = get-credential -message "Input username and password for the target server. Include Domain if domain account."
 
 #These can be edited to suit your purposes
 $outputroot="\\server.domain.com\BaselineSnapshot\Output"
@@ -184,7 +186,7 @@ Remove-PSDrive W
 Invoke-Command -ComputerName $fqdn -credential $credential -ScriptBlock $scriptblock -ArgumentList "$scriptdir","$outputdetails",$hashes,$full,$credential
 
 
-################## Stuff to do locally so we don't risk too much recursion on the remote machine.
+################## Stuff to do locally so we don't risk too much recursion on the remote machine and because it might not have the AD module.
 
 #GroupExploder Function - Recursively finds members of groups
 $global:users = @()
@@ -228,34 +230,35 @@ function groupExploder
 ############## Users and Groups
 Write-Host -foregroundcolor green "Local Users"
 $ADSIComputer = [ADSI]"WinNT://$computername"
-$Users = $ADSIComputer.psbase.Children | Where {$_.psbase.schemaClassName -eq "user"}
-$Users | Out-File $outputdetails\LocalUsers.txt
+$LocalUsers = $ADSIComputer.psbase.Children | Where {$_.psbase.schemaClassName -eq "user"}
+$LocalUsers | Out-File $outputdetails\LocalUsers.txt
 
 #Get all the local groups
 Write-Host -foregroundcolor green "Getting Groups..."
-$Groups = $ADSIComputer.psbase.Children | Where {$_.psbase.schemaClassName -eq "group"}
+$LocalGroups = $ADSIComputer.psbase.Children | Where {$_.psbase.schemaClassName -eq "group"}
 
 #explode the local groups and member groups
 Write-Host -foregroundcolor green "Exploding Groups!"
-ForEach ($Group In $Groups)
+ForEach ($LocalGroup In $LocalGroups)
 {
-    "Local Group: " + $Group.Name >> $outputdetails\ExplodedGroups.txt
-    $Members = @($Group.psbase.Invoke("Members"))
+    "Local Group: " + $LocalGroup.Name >> $outputdetails\ExplodedGroups.txt
+    $Members = @($LocalGroup.psbase.Invoke("Members"))
     ForEach ($Member In $Members)
     {
         $Class = $Member.GetType().InvokeMember("Class", 'GetProperty', $Null, $Member, $Null)
         $Name = $Member.GetType().InvokeMember("Name", 'GetProperty', $Null, $Member, $Null)
         "-- Member: $Name ($Class)" >> $outputdetails\ExplodedGroups.txt
-        groupexploder $Name 5 2>$null 1>> $outputdetails\ExplodedGroups.txt
+        groupexploder $Name 5 >> $outputdetails\ExplodedGroups.txt
     }
-} 
+    Write-Host "Exploded a Group!"
+}
 
 
 #Automatic comparison to the output of the previous run and write it to Compare.txt in the output folder.
-$thisrun = @()
-$thisrun = (Get-ChildItem -Path $outputdetails -Name)
+#$thisrun = @()
+#$thisrun = (Get-ChildItem -Path $outputdetails -Name)
 
-ForEach ($outputfile in $thisrun) {
-    echo "$outputfile" | out-file -append $outputpath\Comparison.txt
-    compare-object (get-content "$outputdetails\$outputfile") (get-content "$lastrundetails\$outputfile") | format-list | Out-File -append $outputpath\Comparison.txt
-                                   }
+#ForEach ($outputfile in $thisrun) {
+#    echo "$outputfile" | out-file -append $outputpath\Comparison.txt
+#    compare-object (get-content "$outputdetails\$outputfile") (get-content "$lastrundetails\$outputfile") | format-list | Out-File -append $outputpath\Comparison.txt
+#                                   }
