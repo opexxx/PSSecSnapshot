@@ -1,7 +1,9 @@
 #**********************************************************************
 #  Remote Forensic Snapshot
 #
-#  Gathers a large amount of detail on 
+#  Gathers a large amount of detail on machine config, group memberships etc.
+# 
+#
 #
 #  Usage: Modify $ouputroot to reflect desired output path, $scriptdir to where the required tools can be found.
 #  RemoteSecSnapshot -Computername [hostname]
@@ -15,6 +17,7 @@
 #      AUTORUNSC.EXE       http://www.microsoft.com/sysinternals/
 #      ACCESSCHK.EXE       http://www.microsoft.com/sysinternals
 #      SHA256DEEP.EXE      http://md5deep.sourceforge.net
+#      machine must have RSAT installed locally.
 #**********************************************************************
 
 Param ([Switch] $TextFileOutput, [Switch] $Full, [Switch] $Hashes)
