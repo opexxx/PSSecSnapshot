@@ -1,7 +1,7 @@
 #**********************************************************************
-#  Local Sec Snapshot
+#  Remote Forensic Snapshot
 #
-#  Gathers a large amount of detail on a given Windows host, pumps it out to xml or txt files.
+#  Gathers a large amount of detail on 
 #
 #  Usage: Modify $ouputroot to reflect desired output path, $scriptdir to where the required tools can be found.
 #  RemoteSecSnapshot -Computername [hostname]
@@ -22,8 +22,8 @@ Param ([Switch] $TextFileOutput, [Switch] $Full, [Switch] $Hashes)
 $computername=$env:computername
 
 #These can be edited to suit your purposes
-$outputroot="\\domain.whatever\path\to\output"
-$scriptdir="\\domain.whatever\path\to\BaselineSnapshot"
+$outputroot="\\son1.curtin.edu.au\cits\infra\SystemsSecurity\BaselineSnapshot\Output"
+$scriptdir="\\son1.curtin.edu.au\cits\infra\SystemsSecurity\BaselineSnapshot"
 
 #Get the FQDN of the target machine.
 $fqdn = [System.Net.Dns]::GetHostByName("$ComputerName") | FL HostName | Out-String | %{ "{0}" -f $_.Split(':')[1].Trim() };
@@ -50,7 +50,7 @@ $lastrundetails = "$outputroot\$computername\$year\$lastrunfolder\Details"
 New-Item -Path $outputdetails -ItemType directory
 
 # Create README.TXT file.
-ECHO "SYSTEM SNAPSHOT" > $outputpath\README.TXT
+ECHO "SYSTEM FORENSICS SNAPSHOT" > $outputpath\README.TXT
 ECHO "Run from Computer: $env:COMPUTERNAME" >> $outputpath\README.TXT
 ECHO "Target Computer: $fqdn" >> $outputpath\README.TXT
 ECHO "Run By User: $env:USERNAME@$env:USERDOMAIN" >> $outputpath\README.TXT
@@ -141,28 +141,41 @@ Write-Host -foregroundcolor green "Done Hashing!"
             }
 
 
-#GroupExploder Function - Recursively finds members of groups - CAN LOOP, BE CAREFUL.
+#GroupExploder Function - Recursively finds members of groups
 $global:users = @()
+$global:explodedguids = @()
+
 function groupExploder
 {
     param([string]$group, [int]$pad)
 
     Write-Output ("".padleft($pad) + $group)
 
-    $EXPLOSION = Get-ADGroupMember $group
+    $ChildGroups = Get-ADGroupMember $group
 
-    foreach($shrapnel in $EXPLOSION)
+    foreach($ChildGroup in $ChildGroups)
     {
         try
         {
-            $result = Get-ADGroup $shrapnel
-            groupExploder $shrapnel.name ($pad + 5) #explode this group in the group \m/ EXPLOSIONS \m/
+            $result = Get-ADGroup $ChildGroup
+            $guid = $ChildGroup.objectguid
+            $dupe = ($global:explodedguids -contains $guid)
+            $global:explodedguids += $guid
+
+            If ($dupe -eq $false)
+            {
+                groupExploder $ChildGroup.name ($pad + 5)#explode this group in the group \m/ EXPLOSIONS \m/
+            }
+            Else
+            {
+                Write-Output "Last group already exploded - stopping here to prevent infinite recursion!"
+            }                                    
         }
         catch
         {
-            $global:users += $shrapnel.SamAccountName
-            $wound = Get-ADUser $shrapnel.SamAccountName
-            Write-Output ("".padleft($pad+5) + $wound.samaccountname + " - " + $wound.givenname + " " + $wound.surname + " Enabled: " + $wound.enabled)
+            $global:users += $ChildGroup.SamAccountName
+            $ChildUser = Get-ADUser $ChildGroup.SamAccountName
+            Write-Output ("".padleft($pad+5) + $ChildUser.samaccountname + " - " + $ChildUser.givenname + " " + $ChildUser.surname + " Enabled: " + $ChildUser.enabled)
         }
     }
 }
