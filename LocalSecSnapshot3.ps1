@@ -22,8 +22,8 @@ Param ([Switch] $TextFileOutput, [Switch] $Full, [Switch] $Hashes)
 $computername=$env:computername
 
 #These can be edited to suit your purposes
-$outputroot="\\son1.curtin.edu.au\cits\infra\SystemsSecurity\BaselineSnapshot\Output"
-$scriptdir="\\son1.curtin.edu.au\cits\infra\SystemsSecurity\BaselineSnapshot"
+$outputroot="\\server.domain.com\BaselineSnapshot\Output"
+$scriptdir="\\server.domain.com\BaselineSnapshot"
 
 #Get the FQDN of the target machine.
 $fqdn = [System.Net.Dns]::GetHostByName("$ComputerName") | FL HostName | Out-String | %{ "{0}" -f $_.Split(':')[1].Trim() };
